@@ -34,8 +34,7 @@ class HttpService {
       xhr.onreadystatechange = () => {
         if (xhr.readyState == 4) {
           if (xhr.status == 200) {
-            console.log(JSON.parse(xhr.responseText));
-            resolve(dado);
+            resolve(JSON.parse(xhr.responseText));
           } else {
             reject(xhr.responseText);
           }
