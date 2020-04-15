@@ -15,22 +15,29 @@ class NegociacaoController {
 
   adiciona(event) {
     event.preventDefault();
-    this._listaNegociacoes.adiciona(this._criaNegociacao());
-    this._mensagem.texto = "Negociação adicionada com sucesso";
-    this._limpaFormulario();
+
+    let service = new NegociacaoService();
+    service.adicionarNegociacao(this._criaNegociacao())
+      .then(negociacao => {
+        this._listaNegociacoes.adiciona(negociacao);
+        this._mensagem.texto = "Negociação adicionada com sucesso";
+        this._limpaFormulario();
+      }).catch(erro => this._mensagem.textp = erro);
   }
 
   importaNegociacoes() {
     let service = new NegociacaoService();
-    service.obterNegociacoesDaSemana((erro, negociacoes) => {
-      if (erro) {
-        this._mensagem.texto = erro;
-        return;
-      }
 
-      negociacoes.forEach(negociacao => this._listaNegociacoes.adiciona(negociacao));
-      this._mensagem.texto = "Negociações importadas com sucesso.";
-    });
+    Promise.all([
+      service.obterNegociacoesDaSemana(),
+      service.obterNegociacoesDaSemanaAnterior(),
+      service.obterNegociacoesDaSemanaRetrasada()]
+    ).then(negociacoes => {
+      negociacoes
+          .reduce((arrayAchatado, array) => arrayAchatado.concat(array), [])
+          .forEach(negociacao => this._listaNegociacoes.adiciona(negociacao));
+      this._mensagem.texto = "Negociações da semana obtidas com sucesso.";
+    }).catch(erro => this._mensagem.texto = erro);
   }
 
   apaga() {
@@ -39,11 +46,11 @@ class NegociacaoController {
   }
 
   _criaNegociacao() {
-    return new Negociacao(
-      DateHelper.textoParaData(this._inputData.value),
-      this._inputQuantidade.value,
-      this._inputValor.value
-    );
+    return {
+      data: this._inputData.value,
+      quantidade: this._inputQuantidade.value,
+      valor: this._inputValor.value
+    };
   }
 
   _limpaFormulario() {
